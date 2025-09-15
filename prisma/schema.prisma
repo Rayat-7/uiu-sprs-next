@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  reports           Report[]
+  assignedReports   Report[] @relation("AssignedReports")
+  reportUpdates     ReportUpdate[]
+  
+  @@map("users")
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  category    String
+  priority    Priority     @default(MEDIUM)
+  status      ReportStatus @default(SUBMITTED)
+  fileUrl     String?
+  
+  // Relations
+  studentId   String
+  student     User         @relation(fields: [studentId], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?       @relation("AssignedReports", fields: [assignedToId], references: [id])
+  
+  updates     ReportUpdate[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  @@map("reports")
+}
+
+model ReportUpdate {
+  id        String     @id @default(cuid())
+  message   String
+  status    ReportStatus
+  
+  // Relations
+  reportId  String
+  report    Report     @relation(fields: [reportId], references: [id])
+  
+  updatedById String
+  updatedBy   User     @relation(fields: [updatedById], references: [id])
+  
+  createdAt DateTime   @default(now())
+  
+  @@map("report_updates")
+}
+
+enum UserRole {
+  STUDENT
+  DSW_ADMIN
+  DEPT_ADMIN
+}
+
+enum ReportStatus {
+  SUBMITTED
+  ASSIGNED_TO_DEPARTMENT
+  IN_PROGRESS
+  RESOLVED
+  APPROVED
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
