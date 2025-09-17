@@ -1,5 +1,6 @@
 "use client"
 
+import { DebugAuth } from "@/components/debug-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle } from "lucide-react"
@@ -14,6 +15,7 @@ export default function UnauthorizedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center px-4">
+      <DebugAuth />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />

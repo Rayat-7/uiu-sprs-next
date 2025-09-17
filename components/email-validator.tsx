@@ -1,57 +1,92 @@
 "use client"
 
-import type React from "react"
-
 import { useUser, useClerk } from "@clerk/nextjs"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+// Updated isUIUEmail function
+function isUIUEmail(email: string): boolean {
+  if (!email) return false
+  // Check if email contains .uiu.ac.bd (covers all department formats)
+  return email.toLowerCase().includes(".uiu.ac.bd")
+}
 
-export function EmailValidator({ children }: { children: React.ReactNode }) {
+interface EmailValidatorProps {
+  children: React.ReactNode
+}
+
+export function EmailValidator({ children }: EmailValidatorProps) {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
   const router = useRouter()
   const [isValidating, setIsValidating] = useState(true)
+  const [shouldSyncUser, setShouldSyncUser] = useState(false)
 
   useEffect(() => {
-    if (!isLoaded) return
+    const validateAndSync = async () => {
+      if (!isLoaded) return
 
-    if (user) {
-      const email = user.emailAddresses[0]?.emailAddress
-      const isUIUEmail = email?.endsWith(".uiu.ac.bd")
-
-      if (!isUIUEmail) {
-        signOut(() => {
-          router.push("/unauthorized")
-        })
+      if (!user) {
+        router.push("/")
         return
       }
 
-      syncUserWithDatabase(user)
+      const email = user.primaryEmailAddress?.emailAddress
+      
+      if (!email || !isUIUEmail(email)) {
+        await signOut()
+        router.push("/unauthorized")
+        return
+      }
+
+      // If we reach here, email is valid - sync user
+      setShouldSyncUser(true)
+      setIsValidating(false)
     }
 
-    setIsValidating(false)
-  }, [user, isLoaded, signOut, router])
+    validateAndSync()
+  }, [isLoaded, user, signOut, router])
 
-  const syncUserWithDatabase = async (user: any) => {
-    try {
-      await fetch("/api/sync-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clerkId: user.id,
-          email: user.emailAddresses[0]?.emailAddress,
-          name: user.fullName || user.firstName || "Unknown",
-        }),
-      })
-    } catch (error) {
-      console.error("Failed to sync user:", error)
+  useEffect(() => {
+    const syncUser = async () => {
+      if (!shouldSyncUser || !user) return
+
+      try {
+        const response = await fetch("/api/sync-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            clerkId: user.id,
+            email: user.primaryEmailAddress?.emailAddress,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to sync user")
+        }
+
+        setShouldSyncUser(false)
+      } catch (error) {
+        console.error("Error syncing user:", error)
+        // If sync fails, sign out and redirect
+        await signOut()
+        router.push("/unauthorized")
+      }
     }
-  }
 
-  if (isValidating) {
+    syncUser()
+  }, [shouldSyncUser, user, signOut, router])
+
+  if (!isLoaded || isValidating || shouldSyncUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Validating your access...</p>
+        </div>
       </div>
     )
   }

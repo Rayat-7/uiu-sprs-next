@@ -1,19 +1,29 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Home, User, Shield, Building2, Menu, X } from "lucide-react"
+import { 
+  Home, 
+  FileText, 
+  Users, 
+  Building2, 
+  Settings,
+  LogOut
+} from "lucide-react"
+import { useClerk } from "@clerk/nextjs"
 
 interface SidebarProps {
   userRole: "STUDENT" | "DSW_ADMIN" | "DEPT_ADMIN"
 }
 
 export function Sidebar({ userRole }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { signOut } = useClerk()
+
+  const handleSignOut = () => {
+    signOut({ redirectUrl: "/" })
+  }
 
   const navigation = [
     {
@@ -25,88 +35,65 @@ export function Sidebar({ userRole }: SidebarProps) {
     {
       name: "Student Dashboard",
       href: "/dashboard/student",
-      icon: User,
+      icon: FileText,
       show: true,
     },
     {
-      name: "DSW Admin Dashboard",
+      name: "DSW Admin",
       href: "/dashboard/dsw-admin",
-      icon: Shield,
+      icon: Users,
       show: userRole === "DSW_ADMIN",
     },
     {
-      name: "Department Dashboard",
+      name: "Department Admin",
       href: "/dashboard/dept-admin",
       icon: Building2,
       show: userRole === "DEPT_ADMIN",
     },
   ]
 
-  const visibleNavigation = navigation.filter((item) => item.show)
-
   return (
-    <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Button variant="outline" size="sm" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center px-6 py-4 border-b">
-            <Shield className="h-8 w-8 text-blue-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">UIUSPRS</span>
+    <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className="flex min-h-0 flex-1 flex-col bg-gray-800">
+        <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+          <div className="flex flex-shrink-0 items-center px-4">
+            <h1 className="text-white text-lg font-semibold">UIUSPRS</h1>
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {visibleNavigation.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-
+          <nav className="mt-5 flex-1 space-y-1 px-2">
+            {navigation.map((item) => {
+              if (!item.show) return null
+              
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    isActive ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    pathname === item.href
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md"
                   )}
                 >
-                  <Icon className="h-5 w-5 mr-3" />
+                  <item.icon
+                    className="mr-3 h-5 w-5 flex-shrink-0"
+                    aria-hidden="true"
+                  />
                   {item.name}
                 </Link>
               )
             })}
           </nav>
-
-          {/* User role indicator */}
-          <div className="px-6 py-4 border-t">
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Current Role</div>
-            <div className="text-sm font-medium text-gray-900 mt-1">
-              {userRole
-                .replace("_", " ")
-                .toLowerCase()
-                .replace(/\b\w/g, (l) => l.toUpperCase())}
-            </div>
-          </div>
+        </div>
+        <div className="flex flex-shrink-0 bg-gray-700 p-4">
+          <button
+            onClick={handleSignOut}
+            className="group flex w-full items-center px-2 py-2 text-sm font-medium text-gray-300 hover:bg-gray-600 hover:text-white rounded-md"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Sign Out
+          </button>
         </div>
       </div>
-
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={() => setIsOpen(false)} />
-      )}
-    </>
+    </div>
   )
 }

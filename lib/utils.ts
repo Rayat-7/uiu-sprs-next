@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function isUIUEmail(email: string): boolean {
-  return email.endsWith(".uiu.ac.bd")
+  if (!email) return false
+  // Check if email contains .uiu.ac.bd (covers all department formats)
+  // This will match: department.uiu.ac.bd, subdept.department.uiu.ac.bd, etc.
+  return email.toLowerCase().includes(".uiu.ac.bd")
 }
 
 export function getReportStatusColor(status: string) {

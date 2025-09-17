@@ -3,8 +3,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Users, Shield, CheckCircle } from "lucide-react"
 import { redirect } from "next/navigation"
+import { auth } from "@clerk/nextjs/server"
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Check if user is already signed in
+  const { userId } = await auth()
+  
+  if (userId) {
+    redirect("/public")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
@@ -17,11 +25,24 @@ export default function LandingPage() {
             </div>
             <div>
               <SignedOut>
-                <SignInButton mode="modal">
-                  <Button className="bg-blue-600 hover:bg-blue-700">Sign In with UIU Email</Button>
+                <SignInButton 
+                  mode="modal"
+                  forceRedirectUrl="/public"
+                  fallbackRedirectUrl="/public"
+                >
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    Sign In with UIU Email
+                  </Button>
                 </SignInButton>
               </SignedOut>
-              {/* <SignedIn>{redirect("/public")}</SignedIn> */}
+              <SignedIn>
+                <Button 
+                  onClick={() => window.location.href = "/public"}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Go to Dashboard
+                </Button>
+              </SignedIn>
             </div>
           </div>
         </div>
@@ -30,21 +51,46 @@ export default function LandingPage() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">United International University</h1>
-          <h2 className="text-2xl font-semibold text-blue-600 mt-2 sm:text-3xl">Student Problem Reporting System</h2>
+          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
+            United International University
+          </h1>
+          <h2 className="text-2xl font-semibold text-blue-600 mt-2 sm:text-3xl">
+            Student Problem Reporting System
+          </h2>
           <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
-            A transparent platform for UIU students to report issues, track progress, and receive timely responses from
-            university authorities.
+            A transparent platform for UIU students to report issues, track progress, and receive 
+            timely responses from university authorities.
           </p>
 
           <div className="mt-10">
             <SignedOut>
-              <SignInButton mode="modal">
+              <SignInButton 
+                mode="modal"
+                forceRedirectUrl="/public"
+                fallbackRedirectUrl="/public"
+              >
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
                   Get Started - Sign In with UIU Email
                 </Button>
               </SignInButton>
             </SignedOut>
+            <SignedIn>
+              <Button 
+                size="lg" 
+                onClick={() => window.location.href = "/public"}
+                className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3"
+              >
+                Continue to Dashboard
+              </Button>
+            </SignedIn>
+          </div>
+
+          {/* Email Format Notice */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg max-w-2xl mx-auto">
+            <p className="text-sm text-blue-800">
+              <strong>Important:</strong> Please use your official UIU email address 
+              (format: yourname@department.uiu.ac.bd) to access this system.
+            </p>
           </div>
         </div>
 
@@ -56,7 +102,9 @@ export default function LandingPage() {
               <CardTitle>Easy Reporting</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Submit your issues with detailed descriptions and file attachments</CardDescription>
+              <CardDescription>
+                Submit your issues with detailed descriptions and file attachments
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -66,7 +114,9 @@ export default function LandingPage() {
               <CardTitle>Transparent Process</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Track your report's progress from submission to resolution</CardDescription>
+              <CardDescription>
+                Track your report's progress from submission to resolution
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -76,7 +126,9 @@ export default function LandingPage() {
               <CardTitle>Secure & Anonymous</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Your reports are handled securely with anonymous public viewing</CardDescription>
+              <CardDescription>
+                Your reports are handled securely with anonymous public viewing
+              </CardDescription>
             </CardContent>
           </Card>
 
@@ -86,7 +138,9 @@ export default function LandingPage() {
               <CardTitle>Quick Resolution</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>Get timely responses and solutions from relevant departments</CardDescription>
+              <CardDescription>
+                Get timely responses and solutions from relevant departments
+              </CardDescription>
             </CardContent>
           </Card>
         </div>
@@ -109,14 +163,18 @@ export default function LandingPage() {
                 <span className="text-2xl font-bold text-green-600">2</span>
               </div>
               <h4 className="text-xl font-semibold mb-2">Track Progress</h4>
-              <p className="text-gray-600">Monitor your report as it moves through DSW and departmental review</p>
+              <p className="text-gray-600">
+                Monitor your report as it moves through DSW and departmental review
+              </p>
             </div>
             <div className="text-center">
               <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-purple-600">3</span>
               </div>
               <h4 className="text-xl font-semibold mb-2">Get Resolution</h4>
-              <p className="text-gray-600">Receive feedback and resolution updates via email and dashboard</p>
+              <p className="text-gray-600">
+                Receive feedback and resolution updates via email and dashboard
+              </p>
             </div>
           </div>
         </div>
@@ -126,7 +184,9 @@ export default function LandingPage() {
       <footer className="bg-gray-800 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2024 United International University. All rights reserved.</p>
-          <p className="mt-2 text-gray-400">Student Problem Reporting System - Making UIU Better Together</p>
+          <p className="mt-2 text-gray-400">
+            Student Problem Reporting System - Making UIU Better Together
+          </p>
         </div>
       </footer>
     </div>

@@ -1,17 +1,60 @@
-import { getCurrentUser } from "@/lib/auth"
+import { auth, currentUser } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { Sidebar } from "@/components/layout/sidebar"
-import { Header } from "@/components/layout/header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { formatReportStatus, getReportStatusColor } from "@/lib/utils"
-import { Calendar, FileText, Tag } from "lucide-react"
-import { EmailValidator } from "@/components/email-validator"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DebugAuth } from "@/components/debug-auth"
+
+function isUIUEmail(email: string): boolean {
+  if (!email) return false
+  return email.toLowerCase().includes(".uiu.ac.bd")
+}
 
 export default async function PublicPage() {
-  const user = await getCurrentUser()
+  const { userId } = await auth()
 
-  // Fetch all reports for public view (anonymous)
+  if (!userId) {
+    redirect("/")
+  }
+
+  // Get full user data from Clerk
+  const clerkUser = await currentUser()
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress
+
+  console.log("Server - User ID:", userId)
+  console.log("Server - Clerk User:", clerkUser ? "Found" : "Not found")
+  console.log("Server - Email:", email)
+  console.log("Server - Email addresses:", clerkUser?.emailAddresses?.map(e => e.emailAddress))
+  console.log("Server - Is UIU Email:", isUIUEmail(email || ""))
+
+  if (!email || !isUIUEmail(email)) {
+    console.log("Server - Redirecting to unauthorized due to invalid email")
+    redirect("/unauthorized")
+  }
+
+  // Try to sync user
+  try {
+    const user = await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: {
+        email: email,
+        firstName: clerkUser?.firstName || "",
+        lastName: clerkUser?.lastName || "",
+      },
+      create: {
+        clerkId: userId,
+        email: email,
+        firstName: clerkUser?.firstName || "",
+        lastName: clerkUser?.lastName || "",
+        role: "STUDENT",
+      },
+    })
+
+    console.log("Server - User synced:", user.email, user.role)
+  } catch (error) {
+    console.error("Server - Error syncing user:", error)
+  }
+
+  // Fetch reports for display
   const reports = await prisma.report.findMany({
     select: {
       id: true,
@@ -21,87 +64,95 @@ export default async function PublicPage() {
       status: true,
       priority: true,
       createdAt: true,
-      // Don't include student info for anonymity
     },
     orderBy: {
       createdAt: "desc",
     },
-    take: 20, // Limit to recent 20 reports
+    take: 10,
   })
 
   return (
-    <EmailValidator>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar userRole={user.role as any} />
-
-        <div className="flex-1 flex flex-col lg:ml-0">
-          <Header title="Public Reports View" />
-
-          <main className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-6xl mx-auto">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Recent Reports</h2>
-                <p className="text-gray-600">All reports are displayed anonymously to maintain student privacy.</p>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">🎉 Welcome to UIU SPRS!</h1>
+        
+        <Card className="mb-8 bg-green-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="text-green-800">✅ Access Granted!</CardTitle>
+          </CardHeader>
+          <CardContent className="text-green-700">
+            <p>Your UIU email has been validated and you now have access to the system.</p>
+          </CardContent>
+        </Card>
+        
+        <DebugAuth />
+        
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Server-side Validation Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div><strong>User ID:</strong> {userId}</div>
+              <div><strong>Email:</strong> {email}</div>
+              <div><strong>First Name:</strong> {clerkUser?.firstName || "Not set"}</div>
+              <div><strong>Last Name:</strong> {clerkUser?.lastName || "Not set"}</div>
+              <div><strong>Is Valid UIU:</strong> 
+                <span className="ml-2 text-green-600 font-semibold">
+                  ✅ {isUIUEmail(email || "") ? "Yes" : "No"}
+                </span>
               </div>
-
-              {reports.length === 0 ? (
-                <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Reports Yet</h3>
-                      <p className="text-gray-600">Be the first to submit a report and help improve UIU!</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-6">
-                  {reports.map((report) => (
-                    <Card key={report.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg mb-2">{report.title}</CardTitle>
-                            <CardDescription className="text-base">
-                              {report.description.length > 200
-                                ? `${report.description.substring(0, 200)}...`
-                                : report.description}
-                            </CardDescription>
-                          </div>
-                          <Badge className={getReportStatusColor(report.status)} variant="secondary">
-                            {formatReportStatus(report.status)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between text-sm text-gray-500">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center">
-                              <Tag className="h-4 w-4 mr-1" />
-                              {report.category}
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {new Date(report.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              report.priority === "HIGH" || report.priority === "URGENT" ? "destructive" : "outline"
-                            }
-                          >
-                            {report.priority}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
             </div>
-          </main>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Available Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <a 
+                href="/dashboard/student" 
+                className="block bg-blue-600 text-white px-6 py-3 rounded-lg text-center hover:bg-blue-700 transition-colors"
+              >
+                Go to Student Dashboard
+              </a>
+              <p className="text-sm text-gray-600">
+                Note: Additional dashboard options will appear in the sidebar based on your role in the database.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Recent Reports ({reports.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {reports.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No reports found. Be the first to submit a report!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.map((report) => (
+                  <div key={report.id} className="border p-4 rounded-lg bg-white">
+                    <h3 className="font-semibold">{report.title}</h3>
+                    <p className="text-gray-600 mt-1">{report.description}</p>
+                    <div className="text-sm text-gray-500 mt-2 flex space-x-4">
+                      <span>Category: {report.category}</span>
+                      <span>Status: {report.status}</span>
+                      <span>Priority: {report.priority}</span>
+                      <span>Date: {new Date(report.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </EmailValidator>
+    </div>
   )
 }
