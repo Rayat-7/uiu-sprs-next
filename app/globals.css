@@ -188,3 +188,24 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+
+.wavy-gradient-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            /* Creates a soft, blurred effect on top */
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.2) 20%, transparent 50%),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.2) 20%, transparent 50%),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 20%, transparent 50%);
+            filter: blur(50px);
+            mix-blend-mode: soft-light;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
