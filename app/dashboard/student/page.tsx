@@ -56,16 +56,12 @@ export default async function StudentDashboard() {
   const totalReports = reports.length
   const pendingReports = reports.filter((r) => !["COMPLETED", "APPROVED"].includes(r.status)).length
   const completedReports = reports.filter((r) => ["COMPLETED", "APPROVED"].includes(r.status)).length
-<<<<<<< HEAD
   const inProgressReports = reports.filter((r) => r.status === "IN_PROGRESS").length
 
   // Calculate next submission date
   const nextSubmissionDate = recentReport 
     ? new Date(recentReport.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000)
     : null
-=======
-  const inProgressReports = reports.filter((r) => ["IN_PROGRESS", "ASSIGNED_TO_DEPARTMENT"].includes(r.status)).length
->>>>>>> cbf613db0e54aabe58a7987705a55a877d97cc37
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +72,6 @@ export default async function StudentDashboard() {
         notificationCount={pendingReports}
       />
 
-<<<<<<< HEAD
       <main className="lg:ml-80 p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Stats Cards */}
@@ -147,88 +142,6 @@ export default async function StudentDashboard() {
                         <h3 className="text-lg font-medium text-gray-900 mb-2">Weekly Limit Reached</h3>
                         <p className="text-gray-600 text-sm mb-4">
                           You can only submit one report per week to ensure quality and prevent spam.
-=======
-      <div className="flex-1 flex flex-col">
-        <Header title="Student Dashboard" userRole={user.role as any} />
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 lg:ml-72">
-          <div className="max-w-7xl mx-auto">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, {user.firstName}!
-              </h2>
-              <p className="text-gray-600">
-                Track your reports and submit new issues through the student reporting system.
-              </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-100">Total Reports</CardTitle>
-                  <FileText className="h-4 w-4 text-blue-200" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalReports}</div>
-                  <p className="text-xs text-blue-100">All time submissions</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-100">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-200" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{pendingReports}</div>
-                  <p className="text-xs text-orange-100">Awaiting resolution</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-100">In Progress</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-purple-200" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{inProgressReports}</div>
-                  <p className="text-xs text-purple-100">Being worked on</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-100">Completed</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-200" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{completedReports}</div>
-                  <p className="text-xs text-green-100">Successfully resolved</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Report Form */}
-              <div className="lg:col-span-1">
-                <Card className="h-fit">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                      Submit New Report
-                    </CardTitle>
-                    <CardDescription>Report issues and track their progress</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!canSubmitReport ? (
-                      <div className="text-center py-8">
-                        <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Report Limit Reached</h3>
-                        <p className="text-gray-600 text-sm mb-4">
-                          You can only submit one report per week. Please wait before submitting another report.
->>>>>>> cbf613db0e54aabe58a7987705a55a877d97cc37
                         </p>
                         <Badge variant="outline" className="text-xs">
                           Next submission: {nextSubmissionDate?.toLocaleDateString()}
@@ -242,7 +155,6 @@ export default async function StudentDashboard() {
               </Card>
             </div>
 
-<<<<<<< HEAD
             {/* Reports List */}
             <div className="lg:col-span-2">
               <Card>
@@ -259,30 +171,12 @@ export default async function StudentDashboard() {
                   <ReportsList reports={reports} showStudentInfo={false} />
                 </CardContent>
               </Card>
-=======
-              {/* Reports List */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Clock className="h-5 w-5 mr-2 text-purple-600" />
-                      My Reports
-                    </CardTitle>
-                    <CardDescription>Track the progress of your submitted reports</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ReportsList reports={reports} showStudentInfo={false} />
-                  </CardContent>
-                </Card>
-              </div>
->>>>>>> cbf613db0e54aabe58a7987705a55a877d97cc37
             </div>
           </div>
         </div>
       </main>
     </div>
   )
-<<<<<<< HEAD
 }
 
 
@@ -436,6 +330,3 @@ export default async function StudentDashboard() {
 //     </div>
 //   )
 // }
-=======
-}
->>>>>>> cbf613db0e54aabe58a7987705a55a877d97cc37
