@@ -2,32 +2,50 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/public(.*)"])
-const isPublicAPIRoute = createRouteMatcher(["/api/sync-user"])
+const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/unauthorized"])
 
 // Updated function to check UIU email format
 function isUIUEmail(email: string): boolean {
   if (!email) return false
-  // Check if email ends with .uiu.ac.bd (covers department.uiu.ac.bd format)
+  // Check if email contains .uiu.ac.bd (covers all department formats)
   return email.toLowerCase().includes(".uiu.ac.bd")
 }
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth()
-  
-  // Protect routes that require authentication
-  if (isProtectedRoute(req)) {
-    await auth.protect()
+  const url = req.nextUrl.pathname
+
+  console.log(`Middleware - Path: ${url}, UserID: ${userId}`)
+
+  // Allow public routes without authentication
+  if (isPublicRoute(req)) {
+    // If user is authenticated and trying to access landing page, redirect to public
+    if (userId && url === "/") {
+      console.log("Middleware - Authenticated user accessing landing, redirecting to /public")
+      return NextResponse.redirect(new URL("/public", req.url))
+    }
+    return NextResponse.next()
   }
 
-  // If user is authenticated and not accessing sync API, validate email
-  if (userId && !isPublicAPIRoute(req)) {
-    // For protected routes, let the EmailValidator component handle validation
-    // This middleware will just ensure authentication, not email validation
-    // The email validation will happen on the client side with proper Clerk hooks
-    
-    // If accessing root and authenticated, redirect to public view
-    if (req.nextUrl.pathname === "/") {
-      return NextResponse.redirect(new URL("/", req.url))
+  // Protect routes that require authentication
+  if (isProtectedRoute(req)) {
+    if (!userId) {
+      console.log("Middleware - No userId, redirecting to sign-in")
+      return NextResponse.redirect(new URL("/sign-in", req.url))
+    }
+
+    try {
+      // Get user details from Clerk
+      const user = await auth()
+      console.log("Middleware - Auth object:", { userId: user.userId })
+
+      // For now, let the client-side EmailValidator handle email validation
+      // This prevents middleware from causing redirect loops
+      return NextResponse.next()
+      
+    } catch (error) {
+      console.error("Middleware - Error getting user:", error)
+      return NextResponse.redirect(new URL("/sign-in", req.url))
     }
   }
 
@@ -40,6 +58,54 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 }
+
+
+
+
+
+
+// import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+// import { NextResponse } from "next/server"
+
+// const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/public(.*)"])
+// const isPublicAPIRoute = createRouteMatcher(["/api/sync-user"])
+
+// // Updated function to check UIU email format
+// function isUIUEmail(email: string): boolean {
+//   if (!email) return false
+//   // Check if email ends with .uiu.ac.bd (covers department.uiu.ac.bd format)
+//   return email.toLowerCase().includes(".uiu.ac.bd")
+// }
+
+// export default clerkMiddleware(async (auth, req) => {
+//   const { userId } = await auth()
+  
+//   // Protect routes that require authentication
+//   if (isProtectedRoute(req)) {
+//     await auth.protect()
+//   }
+
+//   // If user is authenticated and not accessing sync API, validate email
+//   if (userId && !isPublicAPIRoute(req)) {
+//     // For protected routes, let the EmailValidator component handle validation
+//     // This middleware will just ensure authentication, not email validation
+//     // The email validation will happen on the client side with proper Clerk hooks
+    
+//     // If accessing root and authenticated, redirect to public view
+//     if (req.nextUrl.pathname === "/") {
+//       return NextResponse.redirect(new URL("/", req.url))
+//     }
+//   }
+
+//   return NextResponse.next()
+// })
+
+// export const config = {
+//   matcher: [
+//     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+//     "/(api|trpc)(.*)",
+//   ],
+// }
 
 
 
